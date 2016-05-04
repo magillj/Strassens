@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
+#define THRESHOLD 2
 
 /* Asserts that the passed in matrix is the same
  * as a matrix computed using the naive algorithm */
@@ -14,7 +15,7 @@ void checkCorrect(int**, int**, int**, int, int);
 
 /* Uses Strassen's algorithm to multiply together the
  * two passed in matrices and return a result matrix */
-int** strassens(int**, int**, int);
+int** strassens(int**, int, int**, int);
 
 /* Uses the naive multiplication algorithm to multiply together 
  * the two passed in matrices and return a result matrix */
@@ -35,10 +36,10 @@ int computeCell(int**, int**, int, int, int);
 int** matrixOp(int**, int**, int, int);
 
 int main(int argc, char** argv) {
-  int size = 2;
+  int size = 32;
   int** a = createMatrix(size, size);
   int** b = createMatrix(size, size);
-  int** c = strassens(a, b, size);
+  int** c = strassens(a, size, b, size);
   checkCorrect(a, b, c, size, size);
   return EXIT_SUCCESS;
 }
@@ -114,23 +115,9 @@ void checkCorrect(int** m1, int** m2, int** test, int m1Size, int m2Size) {
   printf("passed :) \n");
 }
 
-int** strassens(int** m1, int** m2, int n) {
-  if (0) {
-    int** result = createMatrix(n, n);
-    /*
-    int p1 = m1[i][j+1] * (m2[i][j] + m2[i+1][j]);
-    int p2 = m1[i+1][j] * (m2[i][j+1] + m2[i+1][j+1]);
-    int p3 = (m1[i][j] - m1[i][j+1]) * m2[i][j];
-    int p4 = (m1[i+1][j+1] - m1[i+1][j]) * m2[i+1][j+1];
-    int p5 = (m1[i+1][j+1] - m1[i][j+1]) * (m2[i+1][j] - m2[i+1][j+1]);
-    int p6 = (m1[i][j] - m1[i+1][j]) * (m2[i][j+1] - m2[i][j]);
-    int p7 = (m1[i+1][j] - m1[i][j+1]) * (m2[i][j] + m2[i+1][j+1]);
-    result[i][j] = p1 + p3;
-    result[i][j+1] = p2 + p3 + p6 - p7;
-    result[i+1][j] = p1 + p4 + p5 + p7;
-    result[i+1][j+1] = p2 + p4;
-    */
-    return result;
+int** strassens(int** m1, int n2, int** m2, int n) {
+  if (n == THRESHOLD) {
+    return naive(m1, n2, m2, n);
   } else {
     /* Split m1 and m2 into four quadrants */
     int** a11 = createMatrix(n/2, n/2);
@@ -144,6 +131,8 @@ int** strassens(int** m1, int** m2, int n) {
     int row;
     int col;
     row = col = 0;
+
+    /* Fill quadrant matrices with appropriate values */
     for (int i = 0; i < n/2; i++) {
       for (int j = 0; j < n/2; j++) {
         a11[row][col] = m1[i][j];
@@ -154,6 +143,7 @@ int** strassens(int** m1, int** m2, int n) {
       row++;
     }
     row = col = 0;
+    
     for (int i = 0; i < n/2; i++) {
       for (int j = n/2; j < n; j++) {
         a12[row][col] = m1[i][j];
@@ -163,6 +153,7 @@ int** strassens(int** m1, int** m2, int n) {
       row++;
     }
     row = col = 0;
+    
     for (int i = n/2; i < n; i++) {
       for (int j = 0; j < n/2; j++) {
         a21[row][col] = m1[i][j];
@@ -172,6 +163,7 @@ int** strassens(int** m1, int** m2, int n) {
       row++;
     }
     row = col = 0;
+    
     for (int i = n/2; i < n; i++) {
       for (int j = n/2; j < n; j++) {
         a22[row][col] = m1[i][j];
@@ -182,15 +174,15 @@ int** strassens(int** m1, int** m2, int n) {
     }
 
     /* Use four quadrants and seven multiplications to compute p1, ..., p7 */
-    int** p1 = naive(a12, n/2, matrixOp(b11, b21, n/2, 1), n/2);
-    int** p2 = naive(a21, n/2, matrixOp(b12, b22, n/2, 1), n/2);
-    int** p3 = naive(matrixOp(a11, a12, n/2, 0), n/2, b11, n/2);
-    int** p4 = naive(matrixOp(a22, a21, n/2, 0), n/2, b22, n/2);
-    int** p5 = naive(matrixOp(a22, a12, n/2, 0), n/2, matrixOp(b21, b22, n/2, 0), n/2);
-    int** p6 = naive(matrixOp(a11, a21, n/2, 0), n/2, matrixOp(b12, b11, n/2, 0), n/2);
-    int** p7 = naive(matrixOp(a21, a12, n/2, 0), n/2, matrixOp(b11, b22, n/2, 1), n/2);
+    int** p1 = strassens(a12, n/2, matrixOp(b11, b21, n/2, 1), n/2);
+    int** p2 = strassens(a21, n/2, matrixOp(b12, b22, n/2, 1), n/2);
+    int** p3 = strassens(matrixOp(a11, a12, n/2, 0), n/2, b11, n/2);
+    int** p4 = strassens(matrixOp(a22, a21, n/2, 0), n/2, b22, n/2);
+    int** p5 = strassens(matrixOp(a22, a12, n/2, 0), n/2, matrixOp(b21, b22, n/2, 0), n/2);
+    int** p6 = strassens(matrixOp(a11, a21, n/2, 0), n/2, matrixOp(b12, b11, n/2, 0), n/2);
+    int** p7 = strassens(matrixOp(a21, a12, n/2, 0), n/2, matrixOp(b11, b22, n/2, 1), n/2);
 
-    /* Build result matrix and return */
+    /* Build four quadrants of result matrix */
     int** c = createMatrix(n, n);
     int** c11 = matrixOp(p1, p3, n/2, 1);
     int** c12 = matrixOp(matrixOp(p2, p3, n/2, 1),
@@ -201,6 +193,8 @@ int** strassens(int** m1, int** m2, int n) {
                          n/2, 1);
     int** c22 = matrixOp(p2, p4, n/2, 1);
     row = col = 0;
+
+    /* Fill result matrix to return */
     for (int i = 0; i < n/2; i++) {
       for (int j = 0; j < n/2; j++) {
         c[i][j] = c11[row][col++];
@@ -209,6 +203,7 @@ int** strassens(int** m1, int** m2, int n) {
       row++;
     }
     row = col = 0;
+    
     for (int i = 0; i < n/2; i++) {
       for (int j = n/2; j < n; j++) {
         c[i][j] = c12[row][col++];
@@ -217,6 +212,7 @@ int** strassens(int** m1, int** m2, int n) {
       row++;
     }
     row = col = 0;
+    
     for (int i = n/2; i < n; i++) {
       for (int j = 0; j < n/2; j++) {
         c[i][j] = c21[row][col++];
@@ -225,6 +221,7 @@ int** strassens(int** m1, int** m2, int n) {
       row++;
     }
     row = col = 0;
+    
     for (int i = n/2; i < n; i++) {
       for (int j = n/2; j < n; j++) {
         c[i][j] = c22[row][col++];
@@ -232,6 +229,8 @@ int** strassens(int** m1, int** m2, int n) {
       col = 0;
       row++;
     }
+
+    /* Return result :) */
     return c;
   }
 }
