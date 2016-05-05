@@ -1,8 +1,9 @@
 /*
  * Developed by: Derek Coley & Jake Magill
  * Provides an implementation of Strassen's algorithm
- * and uses the best threshold value for a hybrid
- * algorithm of matrix multiplication over integers
+ * and uses a given threshold value to switch over to
+ * the naive algorithm for matrix multiplication over
+ * integers once the matrix has reached a certain size
  */
 #include <stdlib.h>
 #include <stdio.h>
@@ -10,7 +11,7 @@
 #include <math.h>
 #include <time.h>
 
-int THRESHOLD = 2;
+int THRESHOLD = 64;
 
 /* Asserts that the passed in matrix is the same
  * as a matrix computed using the naive algorithm */
@@ -39,32 +40,21 @@ int computeCell(int**, int**, int, int, int);
 int** matrixOp(int**, int**, int, int);
 
 int main(int argc, char** argv) {
-  for (int i = 7; i < 11; i++) {
-    int size = (int) pow(2, i);
-    printf("Size is %d\n", size);
-    for (int j = 5; j <= i; j++) {
-      int total = 0;
-      THRESHOLD = (int) pow(2, j);
-      for (int k = 0; k < 3; k++) {
-        int** a = createMatrix(size, size);
-        int** b = createMatrix(size, size);
-        
-        /* Start timer */
-        clock_t start = clock(), diff;
-        int** c = strassens(a, size, b, size);
-        
-        /* End timer */
-        diff = clock() - start;
-        checkCorrect(a, b, c, size, size);
-        total += diff;
-      } 
-      /* Log size time and threshold */
-      double average = total / 3.0;
-      double msec = average * 1000 / CLOCKS_PER_SEC;
-      printf("Threshold was %d, average in milliseconds was %f\n\n",
-              THRESHOLD, msec);
-    }
-  }
+  int size = (int) pow(2, 10);
+  int** a = createMatrix(size, size);
+  int** b = createMatrix(size, size);
+  clock_t start = clock(), diff;
+  int** c = strassens(a, size, b, size);
+  diff = clock() - start;
+  double msec = diff * 1000 / CLOCKS_PER_SEC;    
+  checkCorrect(a, b, c, size, size);
+  printf("Time for Strassens on size %d matrices was %f milliseconds\n", size, msec);
+  start = clock();
+  c = naive(a, size, b, size);
+  diff = clock() - start;
+  msec = diff * 1000 / CLOCKS_PER_SEC;    
+  checkCorrect(a, b, c, size, size);
+  printf("Time for naive on size %d matrices was %f milliseconds", size, msec);
   return EXIT_SUCCESS;
 }
 
