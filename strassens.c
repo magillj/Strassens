@@ -7,7 +7,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
-#define THRESHOLD 2
+#include <math.h>
+#include <time.h>
+
+int THRESHOLD = 2;
 
 /* Asserts that the passed in matrix is the same
  * as a matrix computed using the naive algorithm */
@@ -36,11 +39,32 @@ int computeCell(int**, int**, int, int, int);
 int** matrixOp(int**, int**, int, int);
 
 int main(int argc, char** argv) {
-  int size = 32;
-  int** a = createMatrix(size, size);
-  int** b = createMatrix(size, size);
-  int** c = strassens(a, size, b, size);
-  checkCorrect(a, b, c, size, size);
+  for (int i = 7; i < 11; i++) {
+    int size = (int) pow(2, i);
+    printf("Size is %d\n", size);
+    for (int j = 5; j <= i; j++) {
+      int total = 0;
+      THRESHOLD = (int) pow(2, j);
+      for (int k = 0; k < 3; k++) {
+        int** a = createMatrix(size, size);
+        int** b = createMatrix(size, size);
+        
+        /* Start timer */
+        clock_t start = clock(), diff;
+        int** c = strassens(a, size, b, size);
+        
+        /* End timer */
+        diff = clock() - start;
+        checkCorrect(a, b, c, size, size);
+        total += diff;
+      } 
+      /* Log size time and threshold */
+      double average = total / 3.0;
+      double msec = average * 1000 / CLOCKS_PER_SEC;
+      printf("Threshold was %d, average in milliseconds was %f\n\n",
+              THRESHOLD, msec);
+    }
+  }
   return EXIT_SUCCESS;
 }
 
@@ -112,7 +136,6 @@ void checkCorrect(int** m1, int** m2, int** test, int m1Size, int m2Size) {
       assert(test[i][j] == m3[i][j]);
     }
   }
-  printf("passed :) \n");
 }
 
 int** strassens(int** m1, int n2, int** m2, int n) {
